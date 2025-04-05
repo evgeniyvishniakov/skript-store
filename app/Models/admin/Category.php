@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\admin;
 
+use App\Models\Type;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -38,5 +39,9 @@ class Category extends Model
     public function products()
     {
         //return $this->hasMany(Product::class);
+    }
+    public function type()
+    {
+        return $this->belongsTo(Type::class);
     }
 }

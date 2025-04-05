@@ -1,54 +1,57 @@
-@extends('admin.components.layout')
+@extends('admin.layouts.app')
+
+@section('title', 'Управление категориями')
+@section('header', 'Категории товаров')
 
 @section('content')
-    <div class="row">
-        <!-- Левая колонка: форма создания -->
-        <div class="col-md-3 offset-md-1 col-sm-3">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Добавить категорию</h3>
-                </div>
-                <div class="card-body">
-                    <form id="createCategoryForm"
-                          action="{{ route('categories.store') }}"
-                          method="POST">
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Форма создания -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Добавить категорию</h3>
+                    <form id="createCategoryForm">
                         @csrf
-                        <div class="form-group">
-                            <label>Название</label>
-                            <input type="text" name="name" class="form-control" required>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
+                                <input type="text" name="name" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Тип *</label>
+                                <select name="type" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    @foreach($types as $type)
+                                        <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700">
+                                Создать
+                            </button>
                         </div>
-
-                        <div class="form-group">
-                            <label>Тип</label>
-                            <select name="type" class="form-control" required>
-                                @foreach($types as $type)
-                                    <option value="{{ $type }}">{{ ucfirst($type) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Добавить</button>
                     </form>
                 </div>
             </div>
-        </div>
 
-        <!-- Правая колонка: таблица категорий -->
-        <div class="col-md-7 col-lg-7">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Список категорий</h3>
+            <!-- Список категорий -->
+            <div class="lg:col-span-2">
+                <div class="mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Список категорий</h3>
                 </div>
-                <div class="card-body">
-                    <table class="table table-hover">
-                        <thead>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
                         <tr>
-                            <th>ID</th>
-                            <th>Название</th>
-                            <th>Тип</th>
-                            <th>Действия</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Название</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Тип</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Товаров</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
                         </tr>
                         </thead>
-                        <tbody id="categoriesTableBody">
+                        <tbody class="bg-white divide-y divide-gray-200" id="categoriesTableBody">
                         @foreach($categories as $category)
                             @include('admin.categories.row', ['category' => $category])
                         @endforeach
@@ -59,254 +62,186 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editCategoryModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Редактировать категорию</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="editCategoryForm">
-                    <div class="modal-body">
-                        <input type="hidden" name="id" id="editCategoryId">
-                        <div class="mb-3">
-                            <label>Название</label>
-                            <input type="text" name="name" id="editCategoryName" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Тип</label>
-                            <select name="type" id="editCategoryType" class="form-control" required>
-                                @foreach(['framework', 'language', 'topic', 'tool'] as $type)
-                                    <option value="{{ $type }}">{{ ucfirst($type) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label>Цвет</label>
-                            <input type="color" name="color" id="editCategoryColor" class="form-control form-control-color">
-                        </div>
+    <!-- Модальное окно редактирования -->
+    <div class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="editModal">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Редактировать категорию</h3>
+                <form id="editCategoryForm" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="id" id="editCategoryId">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
+                        <input type="text" name="name" id="editCategoryName" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Тип *</label>
+                        <select name="type" id="editCategoryType" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            @foreach($types as $type)
+                                <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-2">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md">
+                            Отмена
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                            Сохранить
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 @endsection
+
 @push('scripts')
-        <script>
-            document.getElementById('createCategoryForm').addEventListener('submit', async function(e) {
+    <script>
+        // Обработчик создания категории
+        document.getElementById('createCategoryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const button = form.querySelector('button');
+            const originalText = button.innerHTML;
+
+            button.disabled = true;
+            button.innerHTML = 'Создание...';
+
+            try {
+                const response = await fetch("{{ route('categories.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value
+                    },
+                    body: new FormData(form)
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Ошибка сервера');
+
+                document.getElementById('categoriesTableBody').insertAdjacentHTML('afterbegin', data.html);
+                form.reset();
+                showToast('Категория создана!', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        });
+
+        // Обработчик редактирования
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-category')) {
+                const btn = e.target.closest('.edit-category');
+                document.getElementById('editCategoryId').value = btn.dataset.id;
+                document.getElementById('editCategoryName').value = btn.dataset.name;
+                document.getElementById('editCategoryType').value = btn.dataset.type;
+                document.getElementById('editModal').classList.remove('hidden');
+            }
+        });
+
+        // Сохранение изменений
+        document.getElementById('editCategoryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+
+            button.disabled = true;
+            button.innerHTML = 'Сохранение...';
+
+            try {
+                const response = await fetch(`/admin-panel/categories/${form.id.value}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                        'X-HTTP-Method-Override': 'PUT'
+                    },
+                    body: new FormData(form)
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || 'Ошибка сервера');
+
+                const row = document.querySelector(`tr[data-id="${data.category.id}"]`);
+                if (row) {
+                    row.querySelector('.category-name').textContent = data.category.name;
+                    row.querySelector('.category-type').textContent = data.category.type;
+                    // Обновляем data-атрибуты кнопки редактирования
+                    row.querySelector('.edit-category').dataset.name = data.category.name;
+                    row.querySelector('.edit-category').dataset.type = data.category.type;
+                }
+
+                closeModal();
+                showToast('Изменения сохранены!', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        });
+
+        // Удаление категории
+        document.addEventListener('submit', async function(e) {
+            if (e.target.classList.contains('delete-form')) {
                 e.preventDefault();
+                if (!confirm('Удалить категорию?')) return;
 
-                const form = this;
-                const tbody = document.getElementById('categoriesTableBody');
-                const submitBtn = form.querySelector('button[type="submit"]');
+                const form = e.target;
+                const row = form.closest('tr');
+                const button = form.querySelector('button');
+                const originalText = button.innerHTML;
 
-                // Блокируем кнопку
-                submitBtn.disabled = true;
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                button.innerHTML = 'Удаление...';
 
                 try {
                     const response = await fetch(form.action, {
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
                             'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            name: form.querySelector('input[name="name"]').value,
-                            type: form.querySelector('select[name="type"]').value
-                        })
+                            'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
+                            'X-HTTP-Method-Override': 'DELETE'
+                        }
                     });
 
                     if (!response.ok) throw new Error('Ошибка сервера');
 
-                    const data = await response.json();
-                    console.log('Полученные данные:', data);
+                    // Анимация удаления
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity 0.3s';
+                    setTimeout(() => row.remove(), 300);
 
-                    if (data.success) {
-                        // Создаем временный контейнер
-                        const temp = document.createElement('tbody');
-                        temp.innerHTML = data.html;
-
-                        // Добавляем новую строку
-                        tbody.appendChild(temp.firstChild);
-
-                        // Очищаем форму
-                        form.reset();
-
-                        // Уведомление
-                        alert('Категория успешно добавлена!');
-                    }
+                    showToast('Категория удалена', 'success');
                 } catch (error) {
-                    console.error('Ошибка:', error);
-                    alert('Ошибка при добавлении: ' + error.message);
+                    showToast(error.message, 'error');
                 } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
+                    button.disabled = false;
+                    button.innerHTML = originalText;
                 }
-            });
-            document.addEventListener('submit', async function(e) {
-                if (e.target.classList.contains('delete-form')) {
-                    e.preventDefault();
-
-                    const form = e.target;
-                    const row = form.closest('tr');
-                    const button = form.querySelector('button');
-                    const originalHtml = button.innerHTML;
-
-                    // Подтверждение
-                    if (!confirm('Удалить категорию?')) return;
-
-                    // Блокируем кнопку
-                    button.disabled = true;
-                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-                    try {
-                        // Добавляем анимацию
-                        row.classList.add('deleting');
-
-                        // Отправка запроса
-                        const response = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value,
-                                'X-HTTP-Method-Override': 'DELETE',
-                                'Accept': 'application/json'
-                            }
-                        });
-
-                        const data = await response.json();
-
-                        if (!response.ok) throw new Error(data.message || 'Ошибка сервера');
-
-                        // Анимация удаления
-                        row.style.transition = 'all 0.5s ease';
-                        row.style.opacity = '0';
-                        row.style.transform = 'translateX(100%)';
-
-                        // Удаляем строку после анимации
-                        setTimeout(() => {
-                            row.remove();
-                            showToast('Категория удалена', 'success');
-                        }, 500);
-
-                    } catch (error) {
-                        console.error('Error:', error);
-                        row.classList.remove('deleting');
-                        button.disabled = false;
-                        button.innerHTML = originalHtml;
-                        showToast(error.message, 'error');
-                    }
-                }
-            });
-
-            // Функция для уведомлений (если ещё нет)
-            function showToast(message, type = 'success') {
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
             }
+        });
 
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.edit-category')) {
-                    const button = e.target.closest('.edit-category');
-                    const modal = new bootstrap.Modal('#editCategoryModal');
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
 
-                    // Заполняем форму данными
-                    document.getElementById('editCategoryId').value = button.dataset.id;
-                    document.getElementById('editCategoryName').value = button.dataset.name;
-                    document.getElementById('editCategoryType').value = button.dataset.type;
-                    document.getElementById('editCategoryColor').value = button.dataset.color || '#6e3aff';
-
-                    modal.show();
-                }
-            });
-
-            document.getElementById('editCategoryForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const form = this;
-                const submitBtn = form.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-                try {
-                    const response = await fetch(`/admin-panel/categories/${form.id.value}`, {
-                        method: 'PUT', // Используем PUT напрямую
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            name: form.name.value,
-                            type: form.type.value,
-                            color: form.color.value
-                        })
-                    });
-
-                    const data = await response.json();
-                    console.log('Ответ сервера:', data); // Для отладки
-
-                    if (!response.ok) throw new Error(data.message || 'Ошибка сервера');
-
-                    // 1. Находим строку в таблице
-                    const row = document.querySelector(`tr[data-id="${data.category.id}"]`);
-                    if (!row) throw new Error('Строка не найдена');
-
-                    // 2. Обновляем данные в таблице
-                    const badge = row.querySelector('.badge');
-                    if (badge) {
-                        badge.textContent = data.category.name;
-                        badge.style.backgroundColor = data.category.color;
-                    }
-
-                    const typeCell = row.querySelector('.category-type');
-                    if (typeCell) {
-                        typeCell.textContent = data.category.type;
-                    }
-
-                    // 3. Обновляем кнопку редактирования
-                    const editBtn = row.querySelector('.edit-category');
-                    if (editBtn) {
-                        editBtn.dataset.name = data.category.name;
-                        editBtn.dataset.type = data.category.type;
-                        editBtn.dataset.color = data.category.color;
-                    }
-
-                    // 4. Закрываем модальное окно
-                    bootstrap.Modal.getInstance('#editCategoryModal').hide();
-
-                    // 5. Показываем уведомление
-                    showToast('✅ Изменения сохранены!');
-
-                } catch (error) {
-                    console.error('Ошибка:', error);
-                    showToast(`❌ ${error.message}`, 'error');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }
-            });
-
-            // Функция для уведомлений
-            function showToast(message, type = 'success') {
-                const toast = document.createElement('div');
-                toast.className = `toast toast-${type}`;
-                toast.textContent = message;
-                document.body.appendChild(toast);
-
-                setTimeout(() => {
-                    toast.remove();
-                }, 3000);
-            }
-        </script>
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-4 py-2 rounded-md text-white ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
 @endpush

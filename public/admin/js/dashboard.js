@@ -8,7 +8,7 @@
   bars: {
     show: true,
     lineWidth: 0,
-    fillColor: '#85c988'          
+    fillColor: '#85c988'
   }
 }], {
   grid: {
@@ -222,7 +222,7 @@
         radius: 2/3,
         threshold: 1
       },
-      stroke: { 
+      stroke: {
         width: 0.1
       }
     }
@@ -373,7 +373,7 @@ function getRandomData() {
     barSpacing: '2',
     barColor: '#42a5f5'
   });
-  
+
   $('#sparklinedash2, #sparklinedash7, #sparklinedash12').sparkline([ 0, 5, 6, 10, 9, 12, 4, 9], {
     type: 'bar',
     height: '30',
@@ -512,3 +512,78 @@ if (Gauge) {
     //gauge.setTextField(document.getElementById("gauge-textfield"));
 
   }
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Генерация slug
+    document.getElementById('name').addEventListener('input', function() {
+        if (!document.getElementById('slug').value) {
+            const slug = this.value.toLowerCase()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            document.getElementById('slug').value = slug;
+        }
+    });
+
+    // Управление особенностями
+    document.getElementById('add-feature').addEventListener('click', function() {
+        const container = document.getElementById('features-container');
+        const div = document.createElement('div');
+        div.className = 'flex space-x-2';
+        div.innerHTML = `
+                <input type="text" name="features[]" class="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Новая особенность">
+                <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 remove-feature">
+                    Удалить
+                </button>
+            `;
+        container.appendChild(div);
+    });
+
+    // Делегирование событий для удаления особенностей
+    document.getElementById('features-container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-feature')) {
+            const features = document.querySelectorAll('#features-container > div');
+            if (features.length > 1) {
+                e.target.closest('div').remove();
+            } else {
+                e.target.previousElementSibling.value = '';
+            }
+        }
+    });
+
+    // Drag and drop для файлов
+    ['product_file', 'cover_image', 'gallery'].forEach(id => {
+        const dropZone = document.querySelector(`input#${id}`).parentNode.parentNode;
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            document.querySelector(`input#${id}`).files = e.dataTransfer.files;
+
+            // Показываем имя файла
+            if (e.dataTransfer.files.length > 0) {
+                const fileName = e.dataTransfer.files[0].name;
+                const fileInfo = document.createElement('p');
+                fileInfo.className = 'text-xs text-gray-500 mt-1';
+                fileInfo.textContent = `Выбран файл: ${fileName}`;
+
+                // Удаляем предыдущую информацию о файле
+                const oldInfo = dropZone.querySelector('.file-info');
+                if (oldInfo) oldInfo.remove();
+
+                dropZone.appendChild(fileInfo).classList.add('file-info');
+            }
+        });
+    });
+});

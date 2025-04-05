@@ -24,5 +24,7 @@ class AppServiceProvider extends ServiceProvider
         Schema::macro('nestedSet', function () {
             NestedSet::columns($this);
         });
+
+        \Illuminate\Support\Facades\App::setLocale('en');
     }
 }

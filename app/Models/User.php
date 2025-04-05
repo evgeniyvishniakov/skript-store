@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar',
+        'newsletter_subscription',
     ];
 
     /**
@@ -41,5 +43,6 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'newsletter_subscription' => 'boolean',
     ];
 }

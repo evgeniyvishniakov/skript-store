@@ -38,11 +38,14 @@
 
                     <!-- Тип, Категория, Платформа -->
                     <div>
-                        <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Тип товара *</label>
-                        <select id="type" name="type" required
+                        <label for="type_id" class="block text-sm font-medium text-gray-700 mb-1">Тип товара *</label>
+                        <select id="type_id" name="type_id" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                            @foreach(['script'=>'Скрипт', 'plugin'=>'Плагин', 'theme'=>'Тема', 'template'=>'Шаблон'] as $value => $label)
-                                <option value="{{ $value }}" {{ old('type') == $value ? 'selected' : '' }}>{{ $label }}</option>
+                            <option value="">Выберите тип</option>
+                            @foreach($types as $type)
+                                <option value="{{ $type->id }}" {{ old('type_id') == $type->id ? 'selected' : '' }}>
+                                    {{ $type->label }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -353,7 +356,8 @@
                 <h2 class="text-lg font-semibold mb-4 text-gray-800 border-b pb-2">Статус публикации</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="flex items-center">
-                        <input id="is_active" name="is_active" type="checkbox" {{ old('is_active', true) ? 'checked' : '' }}
+                        <input type="checkbox" id="is_active" name="is_active" value="1"
+                            {{ old('is_active', true) ? 'checked' : '' }}
                         class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                         <label for="is_active" class="ml-2 block text-sm text-gray-700">Активный товар</label>
                     </div>
@@ -384,17 +388,35 @@
 
     @push('scripts')
         <script>
+
             document.addEventListener('DOMContentLoaded', function() {
                 // Генерация slug
-                document.getElementById('name').addEventListener('input', function() {
-                    if (!document.getElementById('slug').value) {
-                        const slug = this.value.toLowerCase()
-                            .replace(/[^\w\s-]/g, '')
-                            .replace(/[\s_-]+/g, '-')
-                            .replace(/^-+|-+$/g, '');
-                        document.getElementById('slug').value = slug;
+                const nameInput = document.getElementById('name');
+                const slugInput = document.getElementById('slug');
+
+                if (nameInput && slugInput) {
+                    console.log('Элементы name и slug найдены');
+
+                    function slugify(text) {
+                        return text.toString().toLowerCase()
+                            .replace(/\s+/g, '-')
+                            .replace(/[^\w\-]+/g, '')
+                            .replace(/\-\-+/g, '-')
+                            .replace(/^-+/, '')
+                            .replace(/-+$/, '');
                     }
-                });
+
+                    nameInput.addEventListener('input', function() {
+                        console.log('Ввод в поле name: ' + this.value);
+                        slugInput.value = slugify(this.value);
+                    });
+
+                    // Добавим тестовый вызов для проверки функции
+                    console.log('Тест функции slugify: ' + slugify('Тестовый продукт'));
+                } else {
+                    console.error('Элементы name или slug не найдены');
+                }
+
 
                 // Добавление особенностей
                 document.getElementById('add-feature').addEventListener('click', function() {

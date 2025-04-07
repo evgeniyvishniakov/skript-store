@@ -1,21 +1,16 @@
 <?php
-namespace App\Models\admin;
+namespace App\Models\Admin;
 
 use App\Models\Type;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 
 class Category extends Model
 {
-    use SoftDeletes;
     protected $guarded = [];
 
-    protected $fillable = [
-        'name', 'slug', 'type', 'order',
-        'is_active', 'icon', 'color'
-    ];
+    protected $fillable = ['name', 'slug', 'type_id', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean'

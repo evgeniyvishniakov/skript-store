@@ -3,6 +3,7 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    RewriteRule ^storage/app/secure_scripts - [F,L]
     RewriteEngine On
     RewriteRule ^(.*)$ public/$1 [L]
     # Handle Authorization Header

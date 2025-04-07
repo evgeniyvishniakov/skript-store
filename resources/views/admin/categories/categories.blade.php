@@ -20,10 +20,10 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Тип *</label>
-                                <select name="type" required
+                                <select name="type_id" required
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                                     @foreach($types as $type)
-                                        <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                                        <option value="{{ $type->id }}">{{ $type->label }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -78,10 +78,10 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Тип *</label>
-                        <select name="type" id="editCategoryType" required
+                        <select name="type_id" id="editCategoryTypeId" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                             @foreach($types as $type)
-                                <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                                <option value="{{ $type->id }}">{{ $type->label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -107,6 +107,12 @@
             const form = e.target;
             const button = form.querySelector('button');
             const originalText = button.innerHTML;
+            const formData = new FormData(form);
+            if (!formData.get('type_id')) {  // Проверяем type_id вместо type
+                showToast('Пожалуйста, выберите тип', 'error');
+                return;
+            }
+
 
             button.disabled = true;
             button.innerHTML = 'Создание...';
@@ -141,7 +147,27 @@
                 const btn = e.target.closest('.edit-category');
                 document.getElementById('editCategoryId').value = btn.dataset.id;
                 document.getElementById('editCategoryName').value = btn.dataset.name;
-                document.getElementById('editCategoryType').value = btn.dataset.type;
+
+                // Убедитесь что используете правильный ID поля select
+                const typeSelect = document.getElementById('editCategoryTypeId');
+                typeSelect.value = btn.dataset.typeId;
+
+                // Для отладки - проверьте значения в консоли
+                console.log('Editing category:', {
+                    id: btn.dataset.id,
+                    name: btn.dataset.name,
+                    typeId: btn.dataset.typeId,
+                    typeLabel: btn.dataset.typeLabel
+                });
+
+                setTimeout(() => {
+                    const nameInput = document.getElementById('editCategoryName');
+                    nameInput.focus();
+                    // Убедимся, что курсор находится в конце текста
+                    nameInput.selectionStart = nameInput.selectionEnd = nameInput.value.length;
+                }, 100);
+
+
                 document.getElementById('editModal').classList.remove('hidden');
             }
         });
@@ -173,10 +199,14 @@
                 const row = document.querySelector(`tr[data-id="${data.category.id}"]`);
                 if (row) {
                     row.querySelector('.category-name').textContent = data.category.name;
-                    row.querySelector('.category-type').textContent = data.category.type;
-                    // Обновляем data-атрибуты кнопки редактирования
-                    row.querySelector('.edit-category').dataset.name = data.category.name;
-                    row.querySelector('.edit-category').dataset.type = data.category.type;
+                    // Обновляем отображение типа с правильным значением из ответа
+                    row.querySelector('.category-type').textContent = data.category.type_label;
+
+                    // Обновляем атрибуты data для будущих правок
+                    const editButton = row.querySelector('.edit-category');
+                    editButton.dataset.name = data.category.name;
+                    editButton.dataset.typeId = data.category.type_id;
+                    editButton.dataset.typeLabel = data.category.type_label;
                 }
 
                 closeModal();

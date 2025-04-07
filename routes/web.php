@@ -3,15 +3,11 @@
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\ProductController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Shop\AccountController;
 use App\Http\Controllers\Shop\Auth\LoginController;
 use App\Http\Controllers\Shop\Auth\RegisterController;
 use App\Http\Controllers\Shop\HomeController;
-use Illuminate\Foundation\Auth\User;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -55,6 +51,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/account/update', 'update')->name('account.update');
         Route::delete('/account/delete-avatar', 'deleteAvatar')->name('account.delete-avatar');
         Route::post('/account/change-password', 'changePassword')->name('account.change-password');
+        Route::get('/products/{product}/download', [ProductController::class, 'download'])
+            ->name('products.download');
     });
 
     // Выход из системы
@@ -91,7 +89,7 @@ Route::prefix('admin-panel')->group(function () {
                 ->name('admin.products.toggle-active');
             Route::get('stats', [ProductController::class, 'stats'])->name('admin.products.stats');
             Route::get('products/{product}/download', [ProductController::class, 'download'])
-                ->name('products.download');
+                ->name('admin.products.download');
 
         });
     });

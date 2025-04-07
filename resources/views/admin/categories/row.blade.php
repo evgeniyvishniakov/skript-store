@@ -5,23 +5,20 @@
         </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
-        <span class="category-type px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-            {{ $category->type == 'framework' ? 'bg-blue-100 text-blue-800' : '' }}
-            {{ $category->type == 'language' ? 'bg-green-100 text-green-800' : '' }}
-            {{ $category->type == 'topic' ? 'bg-purple-100 text-purple-800' : '' }}
-            {{ $category->type == 'tool' ? 'bg-yellow-100 text-yellow-800' : '' }}">
-            {{ $category->type }}
-        </span>
+    <span class="category-type px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+        {{ $category->type->label ?? $category->type->name ?? 'Не указан' }}
+    </span>
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {{ $category->products_count ?? 0 }}
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div class="flex justify-end space-x-2">
-            <button class="edit-category text-indigo-600 hover:text-indigo-900"
+            <button class="edit-category"
                     data-id="{{ $category->id }}"
                     data-name="{{ $category->name }}"
-                    data-type="{{ $category->type }}"
+                    data-type-id="{{ $category->type_id }}"
+                    data-type-label="{{ $category->type->label }}"
                     title="Редактировать">
                 <i class="fas fa-edit"></i>
             </button>

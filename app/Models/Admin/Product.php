@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Models\admin;
+namespace App\Models\Admin;
 
 use App\Models\Type;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -16,11 +18,11 @@ class Product extends Model
      * @var array
      */
     protected $fillable = [
-        'name', 'slug', 'type', 'description', 'short_description', 'features',
+        'name', 'type_id', 'slug', 'type_id', 'description', 'short_description', 'features',
         'price', 'pricing_tiers', 'license', 'platform', 'compatibility', 'dependencies',
         'cover_image', 'gallery', 'demo_url', 'video_url', 'downloads', 'sales',
         'rating', 'comments_count', 'favorites_count', 'is_active', 'is_featured',
-        'published_at', 'category_id', 'author_id','file_path', 'file_size', 'original_filename'
+        'published_at', 'category_id','file_path', 'file_size', 'original_filename'
     ];
 
     /**
@@ -136,6 +138,14 @@ class Product extends Model
             $query->where('name', 'LIKE', "%{$term}%")
                 ->orWhere('description', 'LIKE', "%{$term}%")
                 ->orWhere('short_description', 'LIKE', "%{$term}%");
+        });
+    }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            $model->slug = $model->slug ?: Str::slug($model->name);
         });
     }
 }

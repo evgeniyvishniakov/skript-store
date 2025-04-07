@@ -1,14 +1,16 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 
-use App\Models\admin\Category;
-use App\Models\admin\Product;
+use App\Http\Controllers\Controller;
+use App\Models\Admin\Category;
+use App\Models\Admin\Product;
+use App\Models\Type;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
@@ -67,7 +69,7 @@ class ProductController extends Controller
     {
         $categories = Category::all();
         $platforms = ['Laravel', 'WordPress', 'React', 'Vue', 'Angular', 'Bootstrap', 'Tailwind', 'Другое'];
-        $types = ['script', 'plugin', 'theme', 'library', 'template'];
+        $types = Type::where('scope', 'product')->get(); // Получаем типы для продуктов
 
         return view('admin.products.create', compact('categories', 'platforms', 'types'));
     }
@@ -98,7 +100,7 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         $product->load(['category', 'author']);
-        return view('products.show', compact('product'));
+        return view('admin.products.index', compact('product'));
     }
 
     /**
@@ -162,7 +164,7 @@ class ProductController extends Controller
         return [
             'name' => 'required|string|max:255',
             'slug' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($id)],
-            'type' => 'required|in:script,plugin,theme,library,template',
+            'type_id' => 'required|exists:types,id',
             'description' => 'nullable|string',
             'short_description' => 'nullable|string',
             'features' => 'nullable|array',
@@ -176,11 +178,16 @@ class ProductController extends Controller
             'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'demo_url' => 'nullable|url',
             'video_url' => 'nullable|url',
-            'is_active' => 'boolean',
+            'is_active' => 'required|boolean',
             'is_featured' => 'boolean',
             'published_at' => 'nullable|date',
             'category_id' => 'required|exists:categories,id',
             'product_file' => 'required|file|mimes:zip,rar|max:51200',
+            'pricing_tiers_name.*' => 'nullable|string|max:255',
+            'pricing_tiers_price.*' => 'nullable|numeric|min:0',
+            'compatibility_name.*' => 'nullable|string|max:255',
+            'compatibility_version.*' => 'nullable|string|max:255',
+            'dependencies.*' => 'nullable|string|max:255',
         ];
     }
 
@@ -189,68 +196,91 @@ class ProductController extends Controller
      */
     private function saveProductData(Product $product, Request $request)
     {
+        // Основные данные
         $product->name = $request->name;
-        $product->slug = $request->slug ?? Str::slug($request->name);
-        $product->type = $request->type;
+        $product->slug = $request->slug ?: Str::slug($request->name);
+        $product->type_id = $request->type_id;
         $product->description = $request->description;
         $product->short_description = $request->short_description;
-        $product->features = $request->features ? json_encode($request->features) : null;
+
+        // Особенности
+        $product->features = $request->features ? json_encode(array_filter($request->features)) : null;
+
+        // Ценовые планы
+        $pricingTiers = [];
+        if ($request->pricing_tiers_name && $request->pricing_tiers_price) {
+            foreach ($request->pricing_tiers_name as $index => $name) {
+                if (!empty($name) && isset($request->pricing_tiers_price[$index])) {
+                    $pricingTiers[] = [
+                        'name' => $name,
+                        'price' => $request->pricing_tiers_price[$index]
+                    ];
+                }
+            }
+        }
+        $product->pricing_tiers = !empty($pricingTiers) ? json_encode($pricingTiers) : null;
+
         $product->price = $request->price;
-        $product->pricing_tiers = $request->pricing_tiers ? json_encode($request->pricing_tiers) : null;
         $product->license = $request->license;
         $product->platform = $request->platform;
-        $product->compatibility = $request->compatibility ? json_encode($request->compatibility) : null;
-        $product->dependencies = $request->dependencies ? json_encode($request->dependencies) : null;
+
+        // Совместимость
+        $compatibility = [];
+        if ($request->compatibility_name && $request->compatibility_version) {
+            foreach ($request->compatibility_name as $index => $name) {
+                if (!empty($name) && isset($request->compatibility_version[$index])) {
+                    $compatibility[] = [
+                        'name' => $name,
+                        'version' => $request->compatibility_version[$index]
+                    ];
+                }
+            }
+        }
+        $product->compatibility = !empty($compatibility) ? json_encode($compatibility) : null;
+
+        // Зависимости
+        $product->dependencies = $request->dependencies ? json_encode(array_filter($request->dependencies)) : null;
 
         // Загрузка обложки
         if ($request->hasFile('cover_image')) {
-            // Удаляем старое изображение, если оно есть
             if ($product->cover_image) {
                 Storage::delete('public/' . $product->cover_image);
             }
-
             $path = $request->file('cover_image')->store('products/covers', 'public');
             $product->cover_image = $path;
         }
 
         // Загрузка галереи
         if ($request->hasFile('gallery')) {
-            $gallery = [];
-            $existingGallery = $product->gallery ? json_decode($product->gallery, true) : [];
-
+            $gallery = $product->gallery ? json_decode($product->gallery, true) : [];
             foreach ($request->file('gallery') as $image) {
                 $path = $image->store('products/gallery', 'public');
                 $gallery[] = $path;
             }
-
-            $product->gallery = json_encode(array_merge($existingGallery, $gallery));
+            $product->gallery = json_encode($gallery);
         }
 
         // Загрузка файла товара
         if ($request->hasFile('product_file')) {
             $file = $request->file('product_file');
 
-            // Удаляем старый файл, если он есть
             if ($product->file_path) {
-                Storage::delete($product->file_path);
+                Storage::disk('secure_scripts')->delete($product->file_path);
             }
 
-            $path = $file->store('products/files');
+            $path = $file->store('', 'secure_scripts');
 
-            $product->update([
-                'file_path' => $path,
-                'file_size' => $file->getSize(),
-                'original_filename' => $file->getClientOriginalName()
-            ]);
+            $product->file_path = $path;
+            $product->file_size = $file->getSize();
+            $product->original_filename = $file->getClientOriginalName();
         }
 
         $product->demo_url = $request->demo_url;
         $product->video_url = $request->video_url;
-        $product->is_active = $request->has('is_active');
+        $product->is_active = (bool)$request->input('is_active', false);
         $product->is_featured = $request->has('is_featured');
         $product->published_at = $request->published_at;
         $product->category_id = $request->category_id;
-        $product->author_id = auth()->id(); // Текущий пользователь как автор
 
         $product->save();
 
@@ -279,10 +309,23 @@ class ProductController extends Controller
 
     public function download(Product $product)
     {
-        if (!Storage::exists($product->file_path)) {
-            abort(404);
+        // Базовые проверки
+        if (!auth()->check()) {
+            abort(403, 'Требуется авторизация');
         }
 
-        return Storage::download($product->file_path, $product->original_filename);
+        if (!Storage::disk('secure_scripts')->exists($product->file_path)) {
+            abort(404, 'Файл не найден');
+        }
+
+
+        return Storage::disk('secure_scripts')->download(
+            $product->file_path,
+            $product->original_filename,
+            [
+                'Content-Type' => 'application/octet-stream',
+                'Content-Disposition' => 'attachment'
+            ]
+        );
     }
 }

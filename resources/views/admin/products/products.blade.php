@@ -106,13 +106,9 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                            {{ $product->type == 'script' ? 'bg-blue-100 text-blue-800' : '' }}
-                            {{ $product->type == 'plugin' ? 'bg-green-100 text-green-800' : '' }}
-                            {{ $product->type == 'theme' ? 'bg-purple-100 text-purple-800' : '' }}
-                            {{ $product->type == 'template' ? 'bg-yellow-100 text-yellow-800' : '' }}">
-                            {{ $product->type_name }}
-                        </span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ $product->type->label ?? 'Без типа' }}
+                            </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $product->category->name ?? 'Без категории' }}
@@ -128,17 +124,17 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end space-x-3">
-                                <a href="{{ route('admin.products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-900" title="Редактировать">
+                                <a href="{{ route('products.edit', $product) }}" class="text-indigo-600 hover:text-indigo-900" title="Редактировать">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline">
+                                <form action="{{ route('products.destroy', $product) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900" title="Удалить" onclick="return confirm('Вы уверены, что хотите удалить этот товар?')">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
-                                <a href="{{ route('admin.products.show', $product) }}" class="text-gray-600 hover:text-gray-900" title="Просмотр">
+                                <a href="" class="text-gray-600 hover:text-gray-900" title="Просмотр">
                                     <i class="fas fa-eye"></i>
                                 </a>
                             </div>

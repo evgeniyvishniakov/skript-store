@@ -1,6 +1,8 @@
 <?php
 namespace App\Models;
 
+use App\Models\Admin\Category;
+use App\Models\Admin\Product;
 use Illuminate\Database\Eloquent\Model;
 
 class Type extends Model
